@@ -1,0 +1,90 @@
+from PySide2.QtWidgets import *
+from ui_main import Ui_MainWindow
+import sys
+import os
+from pytube import YouTube, Playlist
+
+
+class MainWindow(QMainWindow, Ui_MainWindow):
+    def __init__(self):
+        super(MainWindow, self).__init__()
+        self.setupUi(self)
+        self.setWindowTitle('Youtube Downloader')
+        self.btn_download.clicked.connect(self.yt_download)
+
+    def yt_download(self):
+
+        if self.rn_audio.isChecked():
+
+            video_url = self.txt_link.text()
+            arquivo_saida = YouTube(video_url).streams.get_audio_only().download()
+            nome_base, ext = os.path.splitext(arquivo_saida)
+            novo_arquivo = nome_base + '.mp3'
+            os.rename(arquivo_saida, novo_arquivo)
+
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Information)
+            msg.setText('Musica baixada com sucesso!')
+            msg.exec_()
+
+        elif self.rn_video.isChecked():
+
+            video_url = self.txt_link.text()
+            YouTube(video_url).streams.get_highest_resolution().download()
+
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Information)
+            msg.setText('Vídeo baixado com sucesso!')
+            msg.exec_()
+
+                                # PLAYLIST
+        elif self.rn_playlist and self.rn_video and self.rn_audio.isChecked():
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Information)
+            msg.setText('ERRO: ESCOLHA APENAS ENTRE MUSICA OU VIDEO')
+            msg.exec_()
+
+            # AUDIO APENAS
+        elif self.rn_playlist and self.ch_audio.isChecked():
+            video_url = self.txt_link.text()
+            p = Playlist(video_url)
+
+            for video in p.videos:
+                arquivo_saida = video.streams.get_audio_only().download()
+                base, ext = os.path.splitext(arquivo_saida)
+                novo = base + '.mp3'
+                os.rename(arquivo_saida, novo)
+
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Information)
+            msg.setText('Videos baixada com sucesso!')
+            msg.exec_()
+
+            # VÍDEO APENAS
+        elif self.rn_playlist and self.ch_video.isChecked():
+
+            video_url = self.txt_link.text()
+            v = Playlist(video_url)
+
+            for videos in v.videos:
+                videos.streams.get_highest_resolution().download()
+
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Information)
+            msg.setText('Videos baixada com sucesso!')
+            msg.exec_()
+
+            # SE NAO MARCAR NADA
+        elif self.rn_playlist.isChecked():
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Information)
+            msg.setText('Escolha entre: APENAS VIDEO ou APENAS MUSICA')
+            msg.exec_()
+
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    app.exec_()
