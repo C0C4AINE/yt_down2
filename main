@@ -1,8 +1,8 @@
 from PySide2.QtWidgets import *
 from ui_main import Ui_MainWindow
+from pytube import YouTube, Playlist
 import sys
 import os
-from pytube import YouTube, Playlist
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -13,11 +13,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_download.clicked.connect(self.yt_download)
 
     def yt_download(self):
-
+        video_url = self.txt_link.text()
         if self.rn_audio.isChecked():
-
-            video_url = self.txt_link.text()
-            arquivo_saida = YouTube(video_url).streams.get_audio_only().download()
+            arquivo_saida = YouTube(video_url).streams.filter(only_audio=True).first().download()
             nome_base, ext = os.path.splitext(arquivo_saida)
             novo_arquivo = nome_base + '.mp3'
             os.rename(arquivo_saida, novo_arquivo)
@@ -28,8 +26,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             msg.exec_()
 
         elif self.rn_video.isChecked():
-
-            video_url = self.txt_link.text()
             YouTube(video_url).streams.get_highest_resolution().download()
 
             msg = QMessageBox()
@@ -37,50 +33,50 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             msg.setText('Vídeo baixado com sucesso!')
             msg.exec_()
 
-                                # PLAYLIST
-        elif self.rn_playlist and self.rn_video and self.rn_audio.isChecked():
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Information)
-            msg.setText('ERRO: ESCOLHA APENAS ENTRE MUSICA OU VIDEO')
-            msg.exec_()
+        elif self.pl_audio.isChecked():
+            play = Playlist(video_url)
 
-            # AUDIO APENAS
-        elif self.rn_playlist and self.ch_audio.isChecked():
-            video_url = self.txt_link.text()
-            p = Playlist(video_url)
-
-            for video in p.videos:
-                arquivo_saida = video.streams.get_audio_only().download()
-                base, ext = os.path.splitext(arquivo_saida)
-                novo = base + '.mp3'
-                os.rename(arquivo_saida, novo)
+            caminho = os.getcwd() # O caminho recebe onde o projeto / executavel está
 
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Information)
-            msg.setText('Videos baixada com sucesso!')
+            msg.setText(f'Criando pasta {play.title}') # Mensagem alertando a nova pasta com o titulo da Playlist
             msg.exec_()
 
-            # VÍDEO APENAS
-        elif self.rn_playlist and self.ch_video.isChecked():
+            os.mkdir(play.title) # Faça uma pasta com o titulo da playlist
+            os.chdir(f'{caminho}/{play.title}') # Mude o caminho para a nova pasta que foi criada acima
 
-            video_url = self.txt_link.text()
-            v = Playlist(video_url)
-
-            for videos in v.videos:
-                videos.streams.get_highest_resolution().download()
+            for video in play.videos:
+                arquivo_saida = video.streams.filter(only_audio=True).first().download()
+                nome_base, ext = os.path.splitext(arquivo_saida)
+                novo_arquivo = nome_base + '.mp3'
+                os.rename(arquivo_saida, novo_arquivo)
 
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Information)
-            msg.setText('Videos baixada com sucesso!')
+            msg.setText('Audios baixados com sucesso!')
             msg.exec_()
 
-            # SE NAO MARCAR NADA
-        elif self.rn_playlist.isChecked():
+        elif self.pl_video.isChecked():
+            play = Playlist(video_url)
+
+            caminho = os.getcwd()
+
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Information)
-            msg.setText('Escolha entre: APENAS VIDEO ou APENAS MUSICA')
+            msg.setText(f'Criando pasta {play.title}')
             msg.exec_()
 
+            os.mkdir(play.title)
+            os.chdir(f'{caminho}/{play.title}')
+
+            for video in play.videos:
+                video.streams.get_highest_resolution().download()
+
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Information)
+            msg.setText('Audios baixados com sucesso!')
+            msg.exec_()
 
 
 if __name__ == '__main__':
